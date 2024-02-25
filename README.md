@@ -1,18 +1,15 @@
-# AWS Lambda Function Template
+# AWS Lambda Model Deployment
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3121/)
-<a href="https://github.com/new?template_name=aws-lambda-function-template&template_owner=kwame-mintah">
-  <img src="https://img.shields.io/badge/use%20this-template-blue?logo=github">
-</a>
+[![🚧 Bump version](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/bump-repository-version.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/bump-repository-version.yml)
+[![🚀 Push Docker image to AWS ECR](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/push-docker-image-to-aws-ecr.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/push-docker-image-to-aws-ecr.yml)
+[![🧹 Run linter](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/run-python-linter.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/run-python-linter.yml)
 
-This is a template project for a AWS Lambda function deployed as a docker image.
+A lambda to deploy a model via serverless after training has completed. The model artifacts will be used to create a new model,
+endpoint configuration and serverless endpoint configuration within SageMaker.
 
-This repository is intended as a quick-start and includes the following:
-
-- A `Dockerfile` to build the lambda function
-- GitHub Actions to build and push the image to an AWS Elastic Container Registry (ECR)
-- Pre-commit hooks to run on each commit
-- Example unit and feature tests
+This repository does not create other necessarily resources within AWS, this is created via Terraform found here [terraform-aws-machine-learning-pipeline](https://github.com/kwame-mintah/terraform-aws-machine-learning-pipeline).
+For more details on the entire flow and how this lambda is deployed, see [aws-automlops-serverless-deployment](https://github.com/kwame-mintah/aws-automlops-serverless-deployment).
 
 ## Development
 
@@ -27,13 +24,13 @@ This repository is intended as a quick-start and includes the following:
 1. Build the docker image locally:
 
    ```commandline
-   docker build --no-cache -t aws_lambda:local .
+   docker build --no-cache -t model_deployment:local .
    ```
 
 2. Run the docker image built:
 
    ```commandline
-   docker run --platform linux/amd64 -p 9000:8080 aws_lambda:local
+   docker run --platform linux/amd64 -p 9000:8080 model_deployment:local
    ```
 
 3. Send an event to the lambda via curl:
@@ -64,7 +61,7 @@ This repository is intended as a quick-start and includes the following:
              "arn": "arn:aws:s3:::example-bucket"
            },
            "object": {
-             "key": "test%2Fkey",
+             "key": "2024-02-23/output/xgboost-2024-02-23-18-04-06-024/output/model.tar.gz",
              "size": 1024,
              "eTag": "0123456789abcdef0123456789abcdef",
              "sequencer": "0A1B2C3D4E5F678901"
