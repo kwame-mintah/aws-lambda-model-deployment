@@ -1,7 +1,7 @@
-from aws_lambda import lambda_handler
+from model_deployment import lambda_handler
 
 
-def test_lambda():
+def _test_lambda():
     """
     Example unit test for lambda function created, passing in
     the expected event to trigger it.
