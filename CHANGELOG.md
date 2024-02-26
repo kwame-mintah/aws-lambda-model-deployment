@@ -1,3 +1,10 @@
+## 0.2.0 (2024-02-26)
+
+### Feat
+
+- **create_serverless_endpoint**: new function added to create serverless endpoint
+- **create_endpoint_config**: new function added to create endpoint confiuration in sagemaker
+
 ## 0.1.0 (2024-02-25)
 
 ### Feat
