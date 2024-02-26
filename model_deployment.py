@@ -1,6 +1,5 @@
 import logging
 import os
-
 from time import strftime, gmtime
 
 import boto3
@@ -11,7 +10,7 @@ from models import S3Record
 # The AWS region
 aws_region = os.environ.get("AWS_REGION", "eu-west-2")
 
-# Configure SageMaker client and runtime
+# Configure SageMaker client
 sagemaker_client = boto3.client(service_name="sagemaker", region_name=aws_region)
 
 # Configure logging
@@ -35,7 +34,7 @@ def lambda_handler(event, context):
         s3_record.object_key,
     )
     # Create the model using the model artifacts
-    model = create_sagemaker_model(
+    model_name, model_arn = create_sagemaker_model(
         name="xgboost",
         image="xgboost",
         model_data_url="s3://{}/{}".format(
@@ -44,9 +43,14 @@ def lambda_handler(event, context):
         execution_role_arn=sagemaker_role_arn,
     )
 
-    logger.info("Created Model Arn: " + model)
+    logger.info("Created Model Arn: " + model_arn)
 
-    # TODO: Endpoint configuration creation ...
+    # Create endpoint configuration creation
+    endpoint_config = create_endpoint_config(
+        name="xgboost", model_name=model_name, variant_name="mlops"
+    )
+
+    logger.info("Created endpoint config: " + endpoint_config)
 
     # TODO: Serverless endpoint creation ...
 
@@ -59,7 +63,7 @@ def create_sagemaker_model(
     model_data_url: str,
     execution_role_arn: str,
     image_version: str = "latest",
-) -> str:
+) -> tuple[str, str]:
     """
     Creates a model in SageMaker.
 
@@ -68,7 +72,7 @@ def create_sagemaker_model(
     :param model_data_url: Location of model artifacts, enter the Amazon S3 URI to your ML model.
     :param image_version: The framework or algorithm version.
     :param execution_role_arn: The IAM role that SageMaker can assume to access model artifacts
-    :return:
+    :return: model name and model arn
     """
 
     # Create unique model name
@@ -80,7 +84,7 @@ def create_sagemaker_model(
     # TODO: Get the image from the S3 file path
     container = sagemaker.image_uris.retrieve(image, aws_region, image_version)
 
-    # The environment variables to set in the Docker container.
+    # The environment variables to set in the Docker container
     container_env_vars = {"SAGEMAKER_CONTAINER_LOG_LEVEL": "20"}
 
     # Create model in SageMaker, using model training output
@@ -102,4 +106,49 @@ def create_sagemaker_model(
         ],
     )
 
-    return create_model_response["ModelArn"]
+    return model_name, create_model_response["ModelArn"]
+
+
+def create_endpoint_config(
+    name: str,
+    model_name: str,
+    variant_name: str,
+    memory_size_in_mb: int = 4096,
+    max_concurrency: int = 1,
+) -> str:
+    """
+    Creates an endpoint configuration that SageMaker hosting services uses to deploy models.
+
+    :param name: The name of the endpoint configuration.
+    :param model_name: The name of the model to host.
+    :param variant_name: The name of the production variant.
+    :param memory_size_in_mb: The memory size of the serverless endpoint.
+    :param max_concurrency: The maximum number of concurrent invocations.
+    :return:
+    """
+
+    # Name for the endpoint configuration created
+    xgboost_epc_name = (
+        name + "-serverless-epc-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
+    )
+
+    # Create endpoint config in SageMaker
+    endpoint_config_response = sagemaker_client.create_endpoint_config(
+        EndpointConfigName=xgboost_epc_name,
+        ProductionVariants=[
+            {
+                "VariantName": variant_name,
+                "ModelName": model_name,
+                "ServerlessConfig": {
+                    "MemorySizeInMB": memory_size_in_mb,
+                    "MaxConcurrency": max_concurrency,
+                },
+            },
+        ],
+        Tags=[
+            {"Key": "Project", "Value": "MLOps"},
+            {"Key": "Region", "Value": aws_region},
+        ],
+    )
+
+    return endpoint_config_response["EndpointConfigArn"]
