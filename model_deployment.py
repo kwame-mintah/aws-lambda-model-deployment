@@ -33,6 +33,7 @@ def lambda_handler(event, context):
         s3_record.bucket_name,
         s3_record.object_key,
     )
+
     # Create the model using the model artifacts
     model_name, model_arn = create_sagemaker_model(
         name="xgboost",
@@ -45,14 +46,19 @@ def lambda_handler(event, context):
 
     logger.info("Created Model Arn: " + model_arn)
 
-    # Create endpoint configuration creation
-    endpoint_config = create_endpoint_config(
+    # Create endpoint configuration
+    endpoint_config_name, endpoint_config = create_endpoint_config(
         name="xgboost", model_name=model_name, variant_name="mlops"
     )
 
-    logger.info("Created endpoint config: " + endpoint_config)
+    logger.info("Created endpoint config Arn: " + endpoint_config)
 
-    # TODO: Serverless endpoint creation ...
+    # Create serverless endpoint
+    serverless_endpoint = create_serverless_endpoint(
+        name="xgboost", endpoint_config_name=endpoint_config_name
+    )
+
+    logger.info("Created serverless endpoint Arn: " + serverless_endpoint)
 
     return event
 
@@ -115,7 +121,7 @@ def create_endpoint_config(
     variant_name: str,
     memory_size_in_mb: int = 4096,
     max_concurrency: int = 1,
-) -> str:
+) -> tuple[str, str]:
     """
     Creates an endpoint configuration that SageMaker hosting services uses to deploy models.
 
@@ -128,13 +134,14 @@ def create_endpoint_config(
     """
 
     # Name for the endpoint configuration created
-    xgboost_epc_name = (
+    endpoint_config_name = (
         name + "-serverless-epc-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
     )
 
     # Create endpoint config in SageMaker
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint_config.html#SageMaker.Client.create_endpoint_config
     endpoint_config_response = sagemaker_client.create_endpoint_config(
-        EndpointConfigName=xgboost_epc_name,
+        EndpointConfigName=endpoint_config_name,
         ProductionVariants=[
             {
                 "VariantName": variant_name,
@@ -151,4 +158,30 @@ def create_endpoint_config(
         ],
     )
 
-    return endpoint_config_response["EndpointConfigArn"]
+    return endpoint_config_name, endpoint_config_response["EndpointConfigArn"]
+
+
+def create_serverless_endpoint(name: str, endpoint_config_name: str) -> str:
+    """
+    Creates an endpoint using the endpoint configuration specified.
+
+    :param name: The name of the endpoint must be unique within an AWS Region.
+    :param endpoint_config_name: The name of an endpoint configuration.
+    :return:
+    """
+
+    # The endpoint name
+    endpoint_name = name + "serverless-ep-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
+
+    # Create serverless endpoint
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint.html#SageMaker.Client.create_endpoint
+    created_endpoint_response = sagemaker_client.create_endpoint(
+        EndpointName=endpoint_name,
+        EndpointConfigName=endpoint_config_name,
+        Tags=[
+            {"Key": "Project", "Value": "MLOps"},
+            {"Key": "Region", "Value": aws_region},
+        ],
+    )
+
+    return created_endpoint_response["EndpointArn"]
