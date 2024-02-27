@@ -1,3 +1,9 @@
+## 0.2.1 (2024-02-27)
+
+### Refactor
+
+- **create_serverless_endpoint**: add hypen inbetween name for endpoint created
+
 ## 0.2.0 (2024-02-26)
 
 ### Feat
