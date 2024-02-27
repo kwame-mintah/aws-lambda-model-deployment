@@ -171,7 +171,7 @@ def create_serverless_endpoint(name: str, endpoint_config_name: str) -> str:
     """
 
     # The endpoint name
-    endpoint_name = name + "serverless-ep-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
+    endpoint_name = name + "-serverless-ep-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
 
     # Create serverless endpoint
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint.html#SageMaker.Client.create_endpoint
