@@ -27,6 +27,13 @@ sagemaker_role_arn = os.environ.get("SAGEMAKER_ROLE_ARN")
 
 
 def lambda_handler(event, context):
+    """
+    Create serverless inference endpoint for new models.
+
+    :param event: S3 event for `.tar.gz` object added.
+    :param context:
+    :return: event
+    """
     s3_record = S3Record(event)
     logger.info(
         "Received event: %s on bucket: %s for object: %s",

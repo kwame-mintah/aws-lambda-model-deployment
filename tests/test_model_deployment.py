@@ -1,6 +1,7 @@
 import botocore
 from botocore.stub import Stubber, ANY
 
+import model_deployment
 from example_responses import example_event
 from model_deployment import (
     lambda_handler,
@@ -18,7 +19,29 @@ ENDPOINT_CONFIG_ARN = (
 ENDPOINT_ARN = "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
 
 
-def _test_lambda():
+def test_lambda_handler(monkeypatch):
+
+    def model_created(name, image, model_data_url, execution_role_arn):
+        """Stub creating model"""
+        return "model_name", "model_arn"
+
+    def endpoint_config_created(name, model_name, variant_name):
+        """Stub creating endpoint config"""
+        assert model_name == "model_name"
+        return "endpoint_config_name", "endpoint_config"
+
+    def endpoint_created(name, endpoint_config_name):
+        """Stub endpoint created"""
+        assert endpoint_config_name == "endpoint_config_name"
+        return "serverless_endpoint"
+
+    monkeypatch.setattr(model_deployment, "create_sagemaker_model", model_created)
+    monkeypatch.setattr(
+        model_deployment, "create_endpoint_config", endpoint_config_created
+    )
+    monkeypatch.setattr(
+        model_deployment, "create_serverless_endpoint", endpoint_created
+    )
     event = example_event()
     result = lambda_handler(event, None)
     assert result["Records"][0]["eventName"] == "ObjectCreated:Put"
