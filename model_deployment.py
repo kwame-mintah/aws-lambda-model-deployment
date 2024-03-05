@@ -1,6 +1,7 @@
 import logging
 import os
 from time import strftime, gmtime
+from typing import Any
 
 import boto3
 import sagemaker
@@ -69,6 +70,7 @@ def create_sagemaker_model(
     model_data_url: str,
     execution_role_arn: str,
     image_version: str = "latest",
+    boto_client: Any = sagemaker_client,
 ) -> tuple[str, str]:
     """
     Creates a model in SageMaker.
@@ -78,6 +80,7 @@ def create_sagemaker_model(
     :param model_data_url: Location of model artifacts, enter the Amazon S3 URI to your ML model.
     :param image_version: The framework or algorithm version.
     :param execution_role_arn: The IAM role that SageMaker can assume to access model artifacts
+    :param boto_client: Client representing Amazon SageMaker Service
     :return: model name and model arn
     """
 
@@ -95,7 +98,7 @@ def create_sagemaker_model(
 
     # Create model in SageMaker, using model training output
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_model.html
-    create_model_response = sagemaker_client.create_model(
+    create_model_response = boto_client.create_model(
         ModelName=model_name,
         Containers=[
             {
@@ -121,6 +124,7 @@ def create_endpoint_config(
     variant_name: str,
     memory_size_in_mb: int = 4096,
     max_concurrency: int = 1,
+    boto_client: Any = sagemaker_client,
 ) -> tuple[str, str]:
     """
     Creates an endpoint configuration that SageMaker hosting services uses to deploy models.
@@ -130,6 +134,7 @@ def create_endpoint_config(
     :param variant_name: The name of the production variant.
     :param memory_size_in_mb: The memory size of the serverless endpoint.
     :param max_concurrency: The maximum number of concurrent invocations.
+    :param boto_client: Client representing Amazon SageMaker Service
     :return:
     """
 
@@ -140,7 +145,7 @@ def create_endpoint_config(
 
     # Create endpoint config in SageMaker
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint_config.html#SageMaker.Client.create_endpoint_config
-    endpoint_config_response = sagemaker_client.create_endpoint_config(
+    endpoint_config_response = boto_client.create_endpoint_config(
         EndpointConfigName=endpoint_config_name,
         ProductionVariants=[
             {
@@ -161,12 +166,15 @@ def create_endpoint_config(
     return endpoint_config_name, endpoint_config_response["EndpointConfigArn"]
 
 
-def create_serverless_endpoint(name: str, endpoint_config_name: str) -> str:
+def create_serverless_endpoint(
+    name: str, endpoint_config_name: str, boto_client: Any = sagemaker_client
+) -> str:
     """
     Creates an endpoint using the endpoint configuration specified.
 
     :param name: The name of the endpoint must be unique within an AWS Region.
     :param endpoint_config_name: The name of an endpoint configuration.
+    :param boto_client: Client representing Amazon SageMaker Service
     :return:
     """
 
@@ -175,7 +183,7 @@ def create_serverless_endpoint(name: str, endpoint_config_name: str) -> str:
 
     # Create serverless endpoint
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint.html#SageMaker.Client.create_endpoint
-    created_endpoint_response = sagemaker_client.create_endpoint(
+    created_endpoint_response = boto_client.create_endpoint(
         EndpointName=endpoint_name,
         EndpointConfigName=endpoint_config_name,
         Tags=[
