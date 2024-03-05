@@ -1,3 +1,9 @@
+## 0.2.2 (2024-03-05)
+
+### Refactor
+
+- **model_deployment**: include boto client as arg for sagemaker calls
+
 ## 0.2.1 (2024-02-27)
 
 ### Refactor
