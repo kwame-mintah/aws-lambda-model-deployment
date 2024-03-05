@@ -1,17 +1,8 @@
-from model_deployment import lambda_handler
-
-
-def _test_lambda():
+def example_event():
     """
-    Example unit test for lambda function created, passing in
-    the expected event to trigger it.
+    Example event received when a new model has been created.
+    :return:
     """
-    event = example_s3_event()
-    result = lambda_handler(event, None)
-    assert result["Records"][0]["eventName"] == "ObjectCreated:Put"
-
-
-def example_s3_event():
     return {
         "Records": [
             {
@@ -35,7 +26,7 @@ def example_s3_event():
                         "arn": "arn:aws:s3:::example-bucket",
                     },
                     "object": {
-                        "key": "test%2Fkey",
+                        "key": "2024-02-23/output/xgboost-2024-02-23-18-04-06-024/output/model.tar.gz",
                         "size": 1024,
                         "eTag": "0123456789abcdef0123456789abcdef",
                         "sequencer": "0A1B2C3D4E5F678901",
