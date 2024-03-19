@@ -21,6 +21,9 @@ logger.setLevel(logging.INFO)
 # The model output bucket name
 MODEL_OUTPUT_BUCKET_NAME = os.environ.get("MODEL_OUTPUT_BUCKET_NAME")
 
+# The model monitoring bucket name
+MODEL_MONITORING_BUCKET_NAME = os.environ.get("MODEL_MONITORING_BUCKET_NAME")
+
 # The SageMakerExecutionRole ARN
 # TODO: Rather than setting as environment var, retrieve from parameter store
 sagemaker_role_arn = os.environ.get("SAGEMAKER_ROLE_ARN")
@@ -150,8 +153,13 @@ def create_endpoint_config(
         name + "-serverless-epc-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
     )
 
+    # Specify either Input, Output, or both
+    # Example - Use list comprehension to capture both Input and Output
+    capture_modes = ["Input", "Output"]
+
     # Create endpoint config in SageMaker
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint_config.html#SageMaker.Client.create_endpoint_config
+    # https://sagemaker.readthedocs.io/en/stable/api/inference/model_monitor.html#sagemaker.model_monitor.data_capture_config.DataCaptureConfig
     endpoint_config_response = boto_client.create_endpoint_config(
         EndpointConfigName=endpoint_config_name,
         ProductionVariants=[
@@ -164,6 +172,19 @@ def create_endpoint_config(
                 },
             },
         ],
+        DataCaptureConfig={
+            # Whether data should be captured or not.
+            "EnableCapture": True,
+            # Sampling percentage. Choose an integer value between 0 and 100
+            "InitialSamplingPercentage": 20,
+            # The S3 URI containing the captured data
+            "DestinationS3Uri": "s3://{}/{}/".format(
+                MODEL_MONITORING_BUCKET_NAME, model_name
+            ),
+            "CaptureOptions": [
+                {"CaptureMode": capture_mode} for capture_mode in capture_modes
+            ],
+        },
         Tags=[
             {"Key": "Project", "Value": "MLOps"},
             {"Key": "Region", "Value": aws_region},
