@@ -1,3 +1,9 @@
+## 0.3.0 (2024-03-19)
+
+### Feat
+
+- **model_deployment**: enable model monitoring for endpoint configs
+
 ## 0.2.2 (2024-03-05)
 
 ### Refactor
