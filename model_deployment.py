@@ -97,12 +97,12 @@ def create_sagemaker_model(
     Creates a model in SageMaker.
 
     :param name: The name of the new model.
-    :param image: Location of inference code image
+    :param image: Location of inference code image.
     :param model_data_url: Location of model artifacts, enter the Amazon S3 URI to your ML model.
     :param image_version: The framework or algorithm version.
-    :param execution_role_arn: The IAM role that SageMaker can assume to access model artifacts
-    :param boto_client: Client representing Amazon SageMaker Service
-    :return: model name and model arn
+    :param execution_role_arn: The IAM role that SageMaker can assume to access model artifacts.
+    :param boto_client: Client representing Amazon SageMaker Service.
+    :return: model name and model arn.
     """
 
     # Create unique model name
@@ -155,7 +155,7 @@ def create_endpoint_config(
     :param variant_name: The name of the production variant.
     :param memory_size_in_mb: The memory size of the serverless endpoint.
     :param max_concurrency: The maximum number of concurrent invocations.
-    :param boto_client: Client representing Amazon SageMaker Service
+    :param boto_client: Client representing Amazon SageMaker Service.
     :return:
     """
 
