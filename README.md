@@ -4,6 +4,7 @@
 [![🚧 Bump version](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/bump-repository-version.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/bump-repository-version.yml)
 [![🚀 Push Docker image to AWS ECR](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/push-docker-image-to-aws-ecr.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/push-docker-image-to-aws-ecr.yml)
 [![🧹 Run linter](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/run-python-linter.yml/badge.svg)](https://github.com/kwame-mintah/aws-lambda-model-deployment/actions/workflows/run-python-linter.yml)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 A lambda to deploy a model via serverless after training has completed. The model artifacts will be used to create a new model,
 endpoint configuration and serverless endpoint configuration within SageMaker.
