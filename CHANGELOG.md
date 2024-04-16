@@ -1,3 +1,9 @@
+## 0.5.0 (2024-04-16)
+
+### Feat
+
+- **trigger_model_evaluation**: send message to model evaluation queue for predictions
+
 ## 0.4.0 (2024-04-07)
 
 ### Feat
