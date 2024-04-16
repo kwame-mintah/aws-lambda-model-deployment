@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from time import strftime, gmtime
@@ -65,11 +66,21 @@ def lambda_handler(event, context):
     logger.info("Created endpoint config Arn: " + endpoint_config)
 
     # Create serverless endpoint
-    serverless_endpoint = create_serverless_endpoint(
+    serverless_endpoint, serverless_endpoint_name = create_serverless_endpoint(
         name="xgboost", endpoint_config_name=endpoint_config_name
     )
 
     logger.info("Created serverless endpoint Arn: " + serverless_endpoint)
+
+    # Send message to model evaluation queue
+    trigger_model_evaluation(
+        endpoint_name=serverless_endpoint_name,
+        test_data_s3_bucket_name="",
+        test_data_s3_key="",
+        queue_name="",
+    )
+
+    logger.info("Message sent to model-evaluation for prediction(s)")
 
     return event
 
@@ -196,13 +207,13 @@ def create_endpoint_config(
 
 def create_serverless_endpoint(
     name: str, endpoint_config_name: str, boto_client: Any = sagemaker_client
-) -> str:
+) -> tuple[str, str]:
     """
     Creates an endpoint using the endpoint configuration specified.
 
     :param name: The name of the endpoint must be unique within an AWS Region.
     :param endpoint_config_name: The name of an endpoint configuration.
-    :param boto_client: Client representing Amazon SageMaker Service
+    :param boto_client: Client representing Amazon SageMaker Service.
     :return:
     """
 
@@ -220,4 +231,29 @@ def create_serverless_endpoint(
         ],
     )
 
-    return created_endpoint_response["EndpointArn"]
+    return created_endpoint_response["EndpointArn"], endpoint_name
+
+
+def trigger_model_evaluation(
+    endpoint_name: str,
+    test_data_s3_bucket_name: str,
+    test_data_s3_key: str,
+    queue_name: str,
+    boto_client: Any = boto3.client("sqs", region_name=aws_region),
+) -> None:
+    """
+    Send a message to model evaluation lambda, to invoke the endpoint via predictions.
+
+    :param endpoint_name: Name of the Amazon SageMaker endpoint to which requests are sent.
+    :param test_data_s3_bucket_name: The S3 bucket containing the test data.
+    :param test_data_s3_key: The S3 object full path to the test data csv.
+    :param queue_name: The URL of the Amazon SQS queue to which a message is sent.
+    :param boto_client: Boto3 client for sqs.
+    """
+    queue_url = boto_client.get_queue_url(QueueName=queue_name)["QueueUrl"]
+    message_body = {
+        "endpointName": endpoint_name,
+        "testDataS3BucketName": test_data_s3_bucket_name,
+        "testDataS3Key": test_data_s3_key,
+    }
+    boto_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
