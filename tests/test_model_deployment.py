@@ -2,12 +2,13 @@ import botocore
 from botocore.stub import Stubber, ANY
 
 import model_deployment
-from example_responses import example_event
+from example_responses import example_event, example_queue_url, example_send_message
 from model_deployment import (
     lambda_handler,
     create_sagemaker_model,
     create_endpoint_config,
     create_serverless_endpoint,
+    trigger_model_evaluation,
 )
 
 MODEL_ARN = "arn:aws:sagemaker::012345678901:model/model"
@@ -20,7 +21,6 @@ ENDPOINT_ARN = "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
 
 
 def test_lambda_handler(monkeypatch):
-
     def model_created(name, image, model_data_url, execution_role_arn):
         """Stub creating model"""
         return "model_name", "model_arn"
@@ -123,4 +123,30 @@ def test_create_serverless_endpoint(monkeypatch):
         assert (
             serverless_endpoint_name
             == "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
+        )
+
+
+def test_trigger_model_evaluation():
+    sqs_client = botocore.session.get_session().create_client("sqs")
+    stubber = Stubber(sqs_client)
+    expected_params_get_queue_url = {"QueueName": ANY}
+    expected_params_send_message = {"QueueUrl": ANY, "MessageBody": ANY}
+
+    stubber.add_response(
+        "get_queue_url", example_queue_url(), expected_params_get_queue_url
+    )
+    stubber.add_response(
+        "send_message", example_send_message(), expected_params_send_message
+    )
+
+    with stubber:
+        assert (
+            trigger_model_evaluation(
+                endpoint_name="endpoint-name",
+                test_data_s3_bucket_name="bucket-name",
+                test_data_s3_key="s3://bucket-name/test.csv",
+                queue_name="queue-name",
+                boto_client=sqs_client,
+            )
+            is None
         )

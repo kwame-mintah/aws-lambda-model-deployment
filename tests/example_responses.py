@@ -35,3 +35,25 @@ def example_event():
             }
         ]
     }
+
+
+def example_send_message():
+    """
+    Example response after a message has been sent to a SQS.
+    :return:
+    """
+    return {
+        "MD5OfMessageBody": "string",
+        "MD5OfMessageAttributes": "string",
+        "MD5OfMessageSystemAttributes": "string",
+        "MessageId": "string",
+        "SequenceNumber": "string",
+    }
+
+
+def example_queue_url():
+    """
+    Example response after getting a queue url, using the queue name.
+    :return:
+    """
+    return {"QueueUrl": "string"}
