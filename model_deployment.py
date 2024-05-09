@@ -234,6 +234,49 @@ def create_serverless_endpoint(
     return created_endpoint_response["EndpointArn"], endpoint_name
 
 
+def get_training_job_test_data_location(
+    model_output_location: str, boto_client: Any = sagemaker_client
+) -> tuple[str, str]:
+    """
+
+    :param model_output_location:
+    :param boto_client:
+    """
+    # Training jobs name must be unique within an Amazon Web Services Region
+    # in an Amazon Web Services account. Because no `TrainingJobName` is provided.
+    # A unique name is generated, due to `Estimator` config `base_job_name` not being provided resulting in
+    # the estimator to  generate a default job name, based on the training image name and current timestamp:
+    # https://github.com/kwame-mintah/aws-lambda-model-training/blob/c38e2ab32cda11ef2cf66f7d7289799be1bcad35/model_training.py#L229
+    # So, we are able to replace the text to determine the training job name.
+    regex_training_job_algorithm = re.sub(
+        r"\d{4}-\d{2}-\d{2}/[A-Za-z0-9]+/", "", model_output_location
+    ).removesuffix("/output/model.tar.gz")
+    # Get a list of all the tags on the training job.
+    tags = boto_client.list_tags(
+        ResourceArn=f"arn:aws:sagemaker:eu-west-2:827284457226:training-job/{regex_training_job_algorithm}"
+    )["Tags"]
+
+    for tag in tags:
+        if "Testing" in tag["Key"]:
+            test_data_s3_key = str(tag["Value"])
+            # To determine the S3 Bucket name, remove unnecessary object path found in `test_data_s3_key`
+            test_data_s3_bucket_name = re.sub(
+                pattern=r"/[A-Za-z]+/(\d+(-\d+)+)/[A-Za-z]+/[A-Za-z]+/([A-Za-z0-9]+(_[A-Za-z0-9]+)+)\.[A-Za-z]+",
+                repl="",
+                string=test_data_s3_key.removeprefix("s3://"),
+            )
+            logger.info(
+                "Found Testing tag(s), will set test data key as: %s and test data bucket name: %s",
+                test_data_s3_key,
+                test_data_s3_bucket_name,
+            )
+            return test_data_s3_bucket_name, test_data_s3_key
+    logger.warning(
+        "Unable to find relevant tag(s) to determine test data location, empty values provided."
+    )
+    return "", ""
+
+
 def trigger_model_evaluation(
     endpoint_name: str,
     test_data_s3_bucket_name: str,
