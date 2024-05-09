@@ -19,11 +19,14 @@ sagemaker_client = boto3.client(service_name="sagemaker", region_name=aws_region
 logger = logging.getLogger("model-deployment")
 logger.setLevel(logging.INFO)
 
-# The model output bucket name
-MODEL_OUTPUT_BUCKET_NAME = os.environ.get("MODEL_OUTPUT_BUCKET_NAME")
+# The environment the lambda is currently deployed in
+SERVERLESS_ENVIRONMENT = os.environ.get("SERVERLESS_ENVIRONMENT")
 
-# The model monitoring bucket name
-MODEL_MONITORING_BUCKET_NAME = os.environ.get("MODEL_MONITORING_BUCKET_NAME")
+ssm_model_monitoring_bucket_name = (
+    "mlops-eu-west-2-%s-model-monitoring" % SERVERLESS_ENVIRONMENT
+)
+
+ssm_model_queue_name = "mlops-eu-west-2-%s-model-monitoring" % SERVERLESS_ENVIRONMENT
 
 # The SageMakerExecutionRole ARN
 # TODO: Rather than setting as environment var, retrieve from parameter store
@@ -50,17 +53,23 @@ def lambda_handler(event, context):
     model_name, model_arn = create_sagemaker_model(
         name="xgboost",
         image="xgboost",
-        model_data_url="s3://{}/{}".format(
-            MODEL_OUTPUT_BUCKET_NAME, s3_record.object_key
-        ),
+        model_data_url="s3://{}/{}".format(s3_record.bucket_name, s3_record.object_key),
         execution_role_arn=sagemaker_role_arn,
     )
 
     logger.info("Created Model Arn: " + model_arn)
 
+    # Get the S3 bucket for collecting model monitoring outputs
+    monitoring_bucket_name = get_parameter_store_value(
+        name=ssm_model_monitoring_bucket_name
+    )
+
     # Create endpoint configuration
     endpoint_config_name, endpoint_config = create_endpoint_config(
-        name="xgboost", model_name=model_name, variant_name="mlops"
+        name="xgboost",
+        model_name=model_name,
+        variant_name="mlops",
+        monitoring_bucket_name=monitoring_bucket_name,
     )
 
     logger.info("Created endpoint config Arn: " + endpoint_config)
@@ -143,6 +152,7 @@ def create_endpoint_config(
     name: str,
     model_name: str,
     variant_name: str,
+    monitoring_bucket_name: str,
     memory_size_in_mb: int = 4096,
     max_concurrency: int = 1,
     boto_client: Any = sagemaker_client,
@@ -153,6 +163,7 @@ def create_endpoint_config(
     :param name: The name of the endpoint configuration.
     :param model_name: The name of the model to host.
     :param variant_name: The name of the production variant.
+    :param monitoring_bucket_name: The Amazon S3 location used to capture the data.
     :param memory_size_in_mb: The memory size of the serverless endpoint.
     :param max_concurrency: The maximum number of concurrent invocations.
     :param boto_client: Client representing Amazon SageMaker Service.
@@ -190,7 +201,7 @@ def create_endpoint_config(
             "InitialSamplingPercentage": 20,
             # The S3 URI containing the captured data
             "DestinationS3Uri": "s3://{}/{}/".format(
-                MODEL_MONITORING_BUCKET_NAME, model_name
+                monitoring_bucket_name, model_name
             ),
             "CaptureOptions": [
                 {"CaptureMode": capture_mode} for capture_mode in capture_modes
