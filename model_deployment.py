@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from time import strftime, gmtime
 from typing import Any
 
@@ -81,12 +82,21 @@ def lambda_handler(event, context):
 
     logger.info("Created serverless endpoint Arn: " + serverless_endpoint)
 
+    # Get the location of the test data previously split, before starting the
+    # training job.
+    test_data_s3_bucket_name, test_data_s3_key = get_training_job_test_data_location(
+        s3_record.object_key
+    )
+
+    # Get the model evaluation queue name
+    model_evaluation_queue_name = get_parameter_store_value(name=ssm_model_queue_name)
+
     # Send message to model evaluation queue
     trigger_model_evaluation(
         endpoint_name=serverless_endpoint_name,
-        test_data_s3_bucket_name="",
-        test_data_s3_key="",
-        queue_name="",
+        test_data_s3_bucket_name=test_data_s3_bucket_name,
+        test_data_s3_key=test_data_s3_key,
+        queue_name=model_evaluation_queue_name,
     )
 
     logger.info("Message sent to model-evaluation for prediction(s)")
@@ -249,9 +259,10 @@ def get_training_job_test_data_location(
     model_output_location: str, boto_client: Any = sagemaker_client
 ) -> tuple[str, str]:
     """
+    Interpolate training job and test data location.
 
-    :param model_output_location:
-    :param boto_client:
+    :param model_output_location: The S3 model output object key.
+    :param boto_client: Client representing Amazon SageMaker Service.
     """
     # Training jobs name must be unique within an Amazon Web Services Region
     # in an Amazon Web Services account. Because no `TrainingJobName` is provided.
