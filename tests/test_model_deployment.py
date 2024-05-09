@@ -22,18 +22,38 @@ ENDPOINT_ARN = "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
 
 def test_lambda_handler(monkeypatch):
     def model_created(name, image, model_data_url, execution_role_arn):
-        """Stub creating model"""
+        """
+        Stub creating model
+        """
         return "model_name", "model_arn"
 
-    def endpoint_config_created(name, model_name, variant_name):
-        """Stub creating endpoint config"""
+    def endpoint_config_created(name, model_name, variant_name, monitoring_bucket_name):
+        """
+        Stub creating endpoint config
+        """
         assert model_name == "model_name"
         return "endpoint_config_name", "endpoint_config"
 
     def endpoint_created(name, endpoint_config_name):
-        """Stub endpoint created"""
+        """
+        Stub endpoint created
+        """
         assert endpoint_config_name == "endpoint_config_name"
-        return "serverless_endpoint"
+        return "serverless_endpoint", "serverless_endpoint_name"
+
+    def ssm_value(name):
+        """
+        Stub parameter store retrieval
+        """
+        return "value"
+
+    def message_model_evaluation(
+        endpoint_name, test_data_s3_bucket_name, test_data_s3_key, queue_name
+    ):
+        """
+        Stub parameter store retrieval
+        """
+        return None
 
     monkeypatch.setattr(model_deployment, "create_sagemaker_model", model_created)
     monkeypatch.setattr(
@@ -41,6 +61,10 @@ def test_lambda_handler(monkeypatch):
     )
     monkeypatch.setattr(
         model_deployment, "create_serverless_endpoint", endpoint_created
+    )
+    monkeypatch.setattr(model_deployment, "get_parameter_store_value", ssm_value)
+    monkeypatch.setattr(
+        model_deployment, "trigger_model_evaluation", message_model_evaluation
     )
     event = example_event()
     result = lambda_handler(event, None)
@@ -84,6 +108,12 @@ def test_create_endpoint_config(monkeypatch):
                 "VariantName": ANY,
             }
         ],
+        "DataCaptureConfig": {
+            "EnableCapture": ANY,
+            "InitialSamplingPercentage": ANY,
+            "DestinationS3Uri": ANY,
+            "CaptureOptions": ANY,
+        },
         "Tags": ANY,
     }
     stubber.add_response(
@@ -97,6 +127,7 @@ def test_create_endpoint_config(monkeypatch):
             name="name",
             model_name="model_name",
             variant_name="variant_name",
+            monitoring_bucket_name="monitoring-bucket",
             boto_client=sagemaker_client,
         )
         assert (
@@ -115,15 +146,16 @@ def test_create_serverless_endpoint(monkeypatch):
     )
 
     with stubber:
-        serverless_endpoint_name = create_serverless_endpoint(
+        serverless_endpoint_arn, endpoint_name = create_serverless_endpoint(
             name="name",
             endpoint_config_name="name-serverless",
             boto_client=sagemaker_client,
         )
         assert (
-            serverless_endpoint_name
+            serverless_endpoint_arn
             == "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
         )
+        assert "name-serverless-ep-" in endpoint_name
 
 
 def test_trigger_model_evaluation():
