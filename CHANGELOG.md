@@ -1,3 +1,15 @@
+## 0.6.0 (2024-05-09)
+
+### Feat
+
+- **get_training_job_test_data_location**: interpolate training job and test data location
+- **get_parameter_store_value**: add function to get parameter store values
+
+### Refactor
+
+- **trigger_model_evaluation**: interpolate test data created during training split
+- **lambda_handler**: no longer use env for bucket names
+
 ## 0.5.0 (2024-04-16)
 
 ### Feat
