@@ -257,3 +257,17 @@ def trigger_model_evaluation(
         "testDataS3Key": test_data_s3_key,
     }
     boto_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
+
+
+def get_parameter_store_value(
+    name: str, client: Any = boto3.client("ssm", region_name=aws_region)
+) -> str:
+    """
+    Get a parameter store value from AWS.
+
+    :param name: The name or Amazon Resource Name (ARN) of the parameter that you want to query
+    :param client: boto3 client configured to use ssm
+    :return: value
+    """
+    logger.info("Retrieving %s from parameter store", name)
+    return client.get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
