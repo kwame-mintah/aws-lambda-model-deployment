@@ -1,3 +1,9 @@
+## 0.7.1 (2024-05-11)
+
+### Refactor
+
+- **get_training_job_test_data_location**: object key is not a full s3 uri path
+
 ## 0.7.0 (2024-05-11)
 
 ### Feat
