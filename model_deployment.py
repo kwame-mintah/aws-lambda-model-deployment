@@ -288,12 +288,14 @@ def get_training_job_test_data_location(
 
     for tag in tags:
         if "Testing" in tag["Key"]:
-            test_data_s3_key = str(tag["Value"])
+            test_data_s3_key = re.sub(
+                r"[A-Za-z0-9]+://([A-Za-z0-9]+(-[A-Za-z0-9]+)+)/", "", str(tag["Value"])
+            )
             # To determine the S3 Bucket name, remove unnecessary object path found in `test_data_s3_key`
             test_data_s3_bucket_name = re.sub(
                 pattern=r"/[A-Za-z]+/(\d+(-\d+)+)/[A-Za-z]+/[A-Za-z]+/([A-Za-z0-9]+(_[A-Za-z0-9]+)+)\.[A-Za-z]+",
                 repl="",
-                string=test_data_s3_key.removeprefix("s3://"),
+                string=str(tag["Value"]).removeprefix("s3://"),
             )
             logger.info(
                 "Found Testing tag(s), will set test data key as: %s and test data bucket name: %s",
