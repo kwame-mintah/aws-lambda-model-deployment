@@ -23,15 +23,20 @@ logger.setLevel(logging.INFO)
 # The environment the lambda is currently deployed in
 SERVERLESS_ENVIRONMENT = os.environ.get("SERVERLESS_ENVIRONMENT")
 
+# The bucket to store captured requests
 ssm_model_monitoring_bucket_name = (
     "mlops-eu-west-2-%s-model-monitoring" % SERVERLESS_ENVIRONMENT
 )
 
-ssm_model_queue_name = "mlops-eu-west-2-%s-model-monitoring" % SERVERLESS_ENVIRONMENT
+# The queue to invoke model evaluation via test data
+ssm_model_queue_name = (
+    "mlops-eu-west-2-%s-model-monitoring-name" % SERVERLESS_ENVIRONMENT
+)
 
 # The SageMakerExecutionRole ARN
-# TODO: Rather than setting as environment var, retrieve from parameter store
-sagemaker_role_arn = os.environ.get("SAGEMAKER_ROLE_ARN")
+ssm_sagemaker_role_arn = (
+    "mlops-eu-west-2-%s-sagemaker-role-arn" % SERVERLESS_ENVIRONMENT
+)
 
 
 def lambda_handler(event, context):
@@ -49,6 +54,9 @@ def lambda_handler(event, context):
         s3_record.bucket_name,
         s3_record.object_key,
     )
+
+    # Get SageMaker role ARN
+    sagemaker_role_arn = get_parameter_store_value(name=ssm_sagemaker_role_arn)
 
     # Create the model using the model artifacts
     model_name, model_arn = create_sagemaker_model(
