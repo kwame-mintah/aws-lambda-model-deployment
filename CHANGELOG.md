@@ -1,3 +1,9 @@
+## 0.7.0 (2024-05-11)
+
+### Feat
+
+- **sagemaker_role_arn**: get sagemaker arn from parameter store
+
 ## 0.6.0 (2024-05-09)
 
 ### Feat
