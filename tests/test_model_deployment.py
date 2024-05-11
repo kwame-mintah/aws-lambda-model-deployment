@@ -2,13 +2,19 @@ import botocore
 from botocore.stub import Stubber, ANY
 
 import model_deployment
-from example_responses import example_event, example_queue_url, example_send_message
+from example_responses import (
+    example_event,
+    example_queue_url,
+    example_send_message,
+    example_sagemaker_list_tags,
+)
 from model_deployment import (
     lambda_handler,
     create_sagemaker_model,
     create_endpoint_config,
     create_serverless_endpoint,
     trigger_model_evaluation,
+    get_training_job_test_data_location,
 )
 
 MODEL_ARN = "arn:aws:sagemaker::012345678901:model/model"
@@ -156,6 +162,28 @@ def test_create_serverless_endpoint(monkeypatch):
             == "arn:aws:sagemaker::012345678901:endpoint/endpoint-name"
         )
         assert "name-serverless-ep-" in endpoint_name
+
+
+def test_get_training_job_test_data_location():
+    sagemaker_client = botocore.session.get_session().create_client("sagemaker")
+    stubber = Stubber(sagemaker_client)
+    expected_params_list_tags = {"ResourceArn": ANY}
+
+    stubber.add_response(
+        "list_tags", example_sagemaker_list_tags(), expected_params_list_tags
+    )
+
+    with stubber:
+        test_data_s3_bucket_name, test_data_s3_key = (
+            get_training_job_test_data_location(
+                model_output_location="2024-04-22/output/xgboost-2024-04-22-20-51-18-610/output/model.tar.gz",
+                boto_client=sagemaker_client,
+            )
+        )
+        assert test_data_s3_bucket_name == "bucket-name"
+        assert (
+            test_data_s3_key == "automl/2024-04-22/training/testing/test_21_51_18.csv"
+        )
 
 
 def test_trigger_model_evaluation():

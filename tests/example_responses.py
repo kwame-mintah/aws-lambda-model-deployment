@@ -57,3 +57,21 @@ def example_queue_url():
     :return:
     """
     return {"QueueUrl": "string"}
+
+
+def example_sagemaker_list_tags():
+    """
+    Example response when getting list of tags on a SageMaker resource.
+    :return:
+    """
+    return {
+        "Tags": [
+            {"Key": "string", "Value": "string"},
+            {"Key": "string", "Value": "string"},
+            {
+                "Key": "Testing",
+                "Value": "s3://bucket-name/automl/2024-04-22/training/testing/test_21_51_18.csv",
+            },
+        ],
+        "NextToken": "string",
+    }
