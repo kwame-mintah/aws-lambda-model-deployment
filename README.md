@@ -12,6 +12,26 @@ endpoint configuration and serverless endpoint configuration within SageMaker.
 This repository does not create other necessarily resources within AWS, this is created via Terraform found here [terraform-aws-machine-learning-pipeline](https://github.com/kwame-mintah/terraform-aws-machine-learning-pipeline).
 For more details on the entire flow and how this lambda is deployed, see [aws-automlops-serverless-deployment](https://github.com/kwame-mintah/aws-automlops-serverless-deployment).
 
+# Flowchart
+
+The [diagram below](https://mermaid.js.org/syntax/flowchart.html#flowcharts-basic-syntax) demonstrates what happens when the lambda is trigger, when a new `.tar.gz` object has been uploaded to the S3 Bucket.
+
+```mermaid
+graph LR
+  S0(Start)
+  T1(Create SageMaker model with output artifact)
+  T2(Create Endpoint configuration using xgboost)
+  T3(Create Serverless endpoint)
+  T4(Send message to Model Evaluation SQS)
+  E0(End)
+
+  S0-->T1
+  T1-->T2
+  T2-->T3
+  T3-->T4
+  T4-->E0
+```
+
 ## Development
 
 ### Dependencies
