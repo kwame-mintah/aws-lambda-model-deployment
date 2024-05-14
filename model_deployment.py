@@ -24,18 +24,20 @@ logger.setLevel(logging.INFO)
 SERVERLESS_ENVIRONMENT = os.environ.get("SERVERLESS_ENVIRONMENT")
 
 # The bucket to store captured requests
-ssm_model_monitoring_bucket_name = (
-    "mlops-eu-west-2-%s-model-monitoring" % SERVERLESS_ENVIRONMENT
+ssm_model_monitoring_bucket_name = "mlops-{region}-{env}-model-monitoring".format(
+    region=aws_region, env=SERVERLESS_ENVIRONMENT
 )
 
 # The queue to invoke model evaluation via test data
-ssm_model_queue_name = (
-    "mlops-eu-west-2-%s-model-monitoring-name" % SERVERLESS_ENVIRONMENT
+ssm_model_evaluation_queue_name = (
+    "mlops-{region}-{env}-model-evaluation-queue-name".format(
+        region=aws_region, env=SERVERLESS_ENVIRONMENT
+    )
 )
 
 # The SageMakerExecutionRole ARN
-ssm_sagemaker_role_arn = (
-    "mlops-eu-west-2-%s-sagemaker-role-arn" % SERVERLESS_ENVIRONMENT
+ssm_sagemaker_role_arn = "mlops-{region}-{env}-sagemaker-role-arn".format(
+    region=aws_region, env=SERVERLESS_ENVIRONMENT
 )
 
 
@@ -97,7 +99,9 @@ def lambda_handler(event, context):
     )
 
     # Get the model evaluation queue name
-    model_evaluation_queue_name = get_parameter_store_value(name=ssm_model_queue_name)
+    model_evaluation_queue_name = get_parameter_store_value(
+        name=ssm_model_evaluation_queue_name
+    )
 
     # Send message to model evaluation queue
     trigger_model_evaluation(
