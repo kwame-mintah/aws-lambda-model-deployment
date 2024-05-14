@@ -1,3 +1,9 @@
+## 0.7.2 (2024-05-14)
+
+### Refactor
+
+- **ssm_model_evaluation_queue_name**: use correct paramater store name
+
 ## 0.7.1 (2024-05-11)
 
 ### Refactor
