@@ -11,7 +11,7 @@ from example_responses import (
 from model_deployment import (
     lambda_handler,
     create_sagemaker_model,
-    create_endpoint_config,
+    create_serverless_endpoint_config,
     create_serverless_endpoint,
     trigger_model_evaluation,
     get_training_job_test_data_location,
@@ -33,7 +33,7 @@ def test_lambda_handler(monkeypatch):
         """
         return "model_name", "model_arn"
 
-    def endpoint_config_created(name, model_name, variant_name, monitoring_bucket_name):
+    def endpoint_config_created(name, model_name, variant_name):
         """
         Stub creating endpoint config
         """
@@ -63,7 +63,7 @@ def test_lambda_handler(monkeypatch):
 
     monkeypatch.setattr(model_deployment, "create_sagemaker_model", model_created)
     monkeypatch.setattr(
-        model_deployment, "create_endpoint_config", endpoint_config_created
+        model_deployment, "create_serverless_endpoint_config", endpoint_config_created
     )
     monkeypatch.setattr(
         model_deployment, "create_serverless_endpoint", endpoint_created
@@ -114,12 +114,6 @@ def test_create_endpoint_config(monkeypatch):
                 "VariantName": ANY,
             }
         ],
-        "DataCaptureConfig": {
-            "EnableCapture": ANY,
-            "InitialSamplingPercentage": ANY,
-            "DestinationS3Uri": ANY,
-            "CaptureOptions": ANY,
-        },
         "Tags": ANY,
     }
     stubber.add_response(
@@ -129,11 +123,10 @@ def test_create_endpoint_config(monkeypatch):
     )
 
     with stubber:
-        config_name, result = create_endpoint_config(
+        config_name, result = create_serverless_endpoint_config(
             name="name",
             model_name="model_name",
             variant_name="variant_name",
-            monitoring_bucket_name="monitoring-bucket",
             boto_client=sagemaker_client,
         )
         assert (
