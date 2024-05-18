@@ -1,3 +1,9 @@
+## 0.8.0 (2024-05-18)
+
+### Feat
+
+- **create_serverless_endpoint_config**: remove datacaptureconfig from endpoint config
+
 ## 0.7.2 (2024-05-14)
 
 ### Refactor
