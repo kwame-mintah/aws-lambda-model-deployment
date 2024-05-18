@@ -76,11 +76,8 @@ def lambda_handler(event, context):
     )
 
     # Create endpoint configuration
-    endpoint_config_name, endpoint_config = create_endpoint_config(
-        name="xgboost",
-        model_name=model_name,
-        variant_name="mlops",
-        monitoring_bucket_name=monitoring_bucket_name,
+    endpoint_config_name, endpoint_config = create_serverless_endpoint_config(
+        name="xgboost", model_name=model_name, variant_name="mlops"
     )
 
     logger.info("Created endpoint config Arn: " + endpoint_config)
@@ -170,11 +167,10 @@ def create_sagemaker_model(
     return model_name, create_model_response["ModelArn"]
 
 
-def create_endpoint_config(
+def create_serverless_endpoint_config(
     name: str,
     model_name: str,
     variant_name: str,
-    monitoring_bucket_name: str,
     memory_size_in_mb: int = 4096,
     max_concurrency: int = 1,
     boto_client: Any = sagemaker_client,
@@ -185,7 +181,6 @@ def create_endpoint_config(
     :param name: The name of the endpoint configuration.
     :param model_name: The name of the model to host.
     :param variant_name: The name of the production variant.
-    :param monitoring_bucket_name: The Amazon S3 location used to capture the data.
     :param memory_size_in_mb: The memory size of the serverless endpoint.
     :param max_concurrency: The maximum number of concurrent invocations.
     :param boto_client: Client representing Amazon SageMaker Service.
@@ -196,10 +191,6 @@ def create_endpoint_config(
     endpoint_config_name = (
         name + "-serverless-epc-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
     )
-
-    # Specify either Input, Output, or both
-    # Example - Use list comprehension to capture both Input and Output
-    capture_modes = ["Input", "Output"]
 
     # Create endpoint config in SageMaker
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint_config.html#SageMaker.Client.create_endpoint_config
@@ -216,19 +207,9 @@ def create_endpoint_config(
                 },
             },
         ],
-        DataCaptureConfig={
-            # Whether data should be captured or not.
-            "EnableCapture": True,
-            # Sampling percentage. Choose an integer value between 0 and 100
-            "InitialSamplingPercentage": 20,
-            # The S3 URI containing the captured data
-            "DestinationS3Uri": "s3://{}/{}/".format(
-                monitoring_bucket_name, model_name
-            ),
-            "CaptureOptions": [
-                {"CaptureMode": capture_mode} for capture_mode in capture_modes
-            ],
-        },
+        # The data capture config is not supported for serverless endpoint.
+        # Will have to use CloudWatch logs instead to monitor.
+        # https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints-monitoring.html
         Tags=[
             {"Key": "Project", "Value": "MLOps"},
             {"Key": "Region", "Value": aws_region},
