@@ -1,3 +1,9 @@
+## 0.8.1 (2024-05-18)
+
+### Refactor
+
+- **ssm_model_monitoring_bucket_name**: remove reference to monitoring bucket
+
 ## 0.8.0 (2024-05-18)
 
 ### Feat
