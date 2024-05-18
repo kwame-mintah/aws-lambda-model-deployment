@@ -23,11 +23,6 @@ logger.setLevel(logging.INFO)
 # The environment the lambda is currently deployed in
 SERVERLESS_ENVIRONMENT = os.environ.get("SERVERLESS_ENVIRONMENT")
 
-# The bucket to store captured requests
-ssm_model_monitoring_bucket_name = "mlops-{region}-{env}-model-monitoring".format(
-    region=aws_region, env=SERVERLESS_ENVIRONMENT
-)
-
 # The queue to invoke model evaluation via test data
 ssm_model_evaluation_queue_name = (
     "mlops-{region}-{env}-model-evaluation-queue-name".format(
@@ -69,11 +64,6 @@ def lambda_handler(event, context):
     )
 
     logger.info("Created Model Arn: " + model_arn)
-
-    # Get the S3 bucket for collecting model monitoring outputs
-    monitoring_bucket_name = get_parameter_store_value(
-        name=ssm_model_monitoring_bucket_name
-    )
 
     # Create endpoint configuration
     endpoint_config_name, endpoint_config = create_serverless_endpoint_config(
