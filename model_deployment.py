@@ -7,6 +7,7 @@ from typing import Any
 
 import boto3
 import sagemaker
+from sagemaker.s3_utils import parse_s3_url
 
 from models import S3Record
 
@@ -263,15 +264,7 @@ def get_training_job_test_data_location(
 
     for tag in tags:
         if "Testing" in tag["Key"]:
-            test_data_s3_key = re.sub(
-                r"[A-Za-z0-9]+://([A-Za-z0-9]+(-[A-Za-z0-9]+)+)/", "", str(tag["Value"])
-            )
-            # To determine the S3 Bucket name, remove unnecessary object path found in `test_data_s3_key`
-            test_data_s3_bucket_name = re.sub(
-                pattern=r"/[A-Za-z]+/(\d+(-\d+)+)/[A-Za-z]+/[A-Za-z]+/([A-Za-z0-9]+(_[A-Za-z0-9]+)+)\.[A-Za-z]+",
-                repl="",
-                string=str(tag["Value"]).removeprefix("s3://"),
-            )
+            test_data_s3_bucket_name, test_data_s3_key = parse_s3_url(str(tag["Value"]))
             logger.info(
                 "Found Testing tag(s), will set test data key as: %s and test data bucket name: %s",
                 test_data_s3_key,
