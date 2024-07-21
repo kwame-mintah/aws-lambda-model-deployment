@@ -1,3 +1,9 @@
+## 0.8.2 (2024-07-21)
+
+### Refactor
+
+- **get_training_job_test_data_location**: re-use existing function for parsing s3 urls
+
 ## 0.8.1 (2024-05-18)
 
 ### Refactor
