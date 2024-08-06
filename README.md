@@ -32,6 +32,18 @@ graph LR
   T4-->E0
 ```
 
+# Notice
+
+Please note because the SageMaker endpoint deployed is serverless, means [`DataCaptureConfig`](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-capture-endpoint.html),
+is not supported and will have to rely on CloudWatch logs as per official [documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints-monitoring.html).
+
+Because endpoint(s) and endpoint configuration(s) are not created via Terraform, these will not be deleted when
+destroying the environment and will need to be deleted manually or programmatically, for example if the new model is
+not perform as expected, delete all related configurations created for inference.
+
+If Terraform has destroyed all related infrastructure related to SageMaker, for example S3 bucket containing model output
+has been deleted, then you are unable to invoke the endpoint because the model no longer exists.
+
 ## Development
 
 ### Dependencies
@@ -44,20 +56,22 @@ graph LR
 
 1. Build the docker image locally:
 
-   ```commandline
+   ```shell
    docker build --no-cache -t model_deployment:local .
    ```
 
 2. Run the docker image built:
 
-   ```commandline
+   ```shell
    docker run --platform linux/amd64 -p 9000:8080 model_deployment:local
    ```
 
 3. Send an event to the lambda via curl:
-   ```commandline
-   curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{<REPLACE_WITH_JSON_BELOW>}'
+   ```shell
+   curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{<EXPAND_BELOW_AND_REPLACE_WITH_JSON_BELOW>}'
    ```
+   <details>
+   <summary>Example AWS S3 event received</summary>
    ```json
    {
      "Records": [
@@ -92,6 +106,7 @@ graph LR
      ]
    }
    ```
+   </details>
 
 ## GitHub Action (CI/CD)
 
@@ -99,7 +114,7 @@ The GitHub Action "🚀 Push Docker image to AWS ECR" will checkout the reposito
 [configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials/tree/v4.0.1/) action. The following repository secrets need to be set:
 
 | Secret             | Description                  |
-| ------------------ | ---------------------------- |
+|--------------------|------------------------------|
 | AWS_REGION         | The AWS Region.              |
 | AWS_ACCOUNT_ID     | The AWS account ID.          |
 | AWS_ECR_REPOSITORY | The AWS ECR repository name. |
