@@ -1,3 +1,9 @@
+## 0.8.3 (2024-08-06)
+
+### Refactor
+
+- **model_deployment**: rename function and include keywork args
+
 ## 0.8.2 (2024-07-21)
 
 ### Refactor
