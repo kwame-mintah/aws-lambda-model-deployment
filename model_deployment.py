@@ -92,7 +92,7 @@ def lambda_handler(event, context):
     )
 
     # Send message to model evaluation queue
-    trigger_model_evaluation(
+    send_message_to_model_evaluation_queue(
         endpoint_name=serverless_endpoint_name,
         test_data_s3_bucket_name=test_data_s3_bucket_name,
         test_data_s3_key=test_data_s3_key,
@@ -222,7 +222,6 @@ def create_serverless_endpoint(
     :return:
     """
 
-    # The endpoint name
     endpoint_name = name + "-serverless-ep-" + strftime("%Y-%m-%d-%H-%M-%S", gmtime())
 
     # Create serverless endpoint
@@ -259,7 +258,7 @@ def get_training_job_test_data_location(
     ).removesuffix("/output/model.tar.gz")
     # Get a list of all the tags on the training job.
     tags = boto_client.list_tags(
-        ResourceArn=f"arn:aws:sagemaker:eu-west-2:827284457226:training-job/{regex_training_job_algorithm}"
+        ResourceArn=f"arn:aws:sagemaker:{aws_region}:827284457226:training-job/{regex_training_job_algorithm}"
     )["Tags"]
 
     for tag in tags:
@@ -277,12 +276,12 @@ def get_training_job_test_data_location(
     return "", ""
 
 
-def trigger_model_evaluation(
+def send_message_to_model_evaluation_queue(
     endpoint_name: str,
     test_data_s3_bucket_name: str,
     test_data_s3_key: str,
     queue_name: str,
-    boto_client: Any = boto3.client("sqs", region_name=aws_region),
+    boto_client: Any = boto3.client(service_name="sqs", region_name=aws_region),
 ) -> None:
     """
     Send a message to model evaluation lambda, to invoke the endpoint via predictions.
@@ -303,7 +302,7 @@ def trigger_model_evaluation(
 
 
 def get_parameter_store_value(
-    name: str, client: Any = boto3.client("ssm", region_name=aws_region)
+    name: str, client: Any = boto3.client(service_name="ssm", region_name=aws_region)
 ) -> str:
     """
     Get a parameter store value from AWS.

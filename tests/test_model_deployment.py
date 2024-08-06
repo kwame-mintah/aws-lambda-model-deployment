@@ -13,7 +13,7 @@ from model_deployment import (
     create_sagemaker_model,
     create_serverless_endpoint_config,
     create_serverless_endpoint,
-    trigger_model_evaluation,
+    send_message_to_model_evaluation_queue,
     get_training_job_test_data_location,
 )
 
@@ -194,7 +194,7 @@ def test_trigger_model_evaluation():
 
     with stubber:
         assert (
-            trigger_model_evaluation(
+            send_message_to_model_evaluation_queue(
                 endpoint_name="endpoint-name",
                 test_data_s3_bucket_name="bucket-name",
                 test_data_s3_key="s3://bucket-name/test.csv",
